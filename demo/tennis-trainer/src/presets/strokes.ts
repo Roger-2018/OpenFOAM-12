@@ -1,5 +1,6 @@
 import type { BallState } from '../physics/types'
 import { v3 } from '../physics/vec3'
+import { fitInitialStateToCourt } from './fitToCourt'
 
 export type StrokeId = 'flat' | 'topspin' | 'slice' | 'sideSpin'
 
@@ -34,7 +35,7 @@ export const STROKE_PRESETS: Record<
   },
 }
 
-const BASE_SPEED = 28
+const BASE_SPEED = 21
 const BASE_HEIGHT = 1.25
 const BASE_Z = -9.5
 
@@ -42,7 +43,8 @@ function clamp01(n: number) {
   return Math.min(1, Math.max(0, n))
 }
 
-export function buildInitialState(
+/** Raw launch from UI tuning (may land out until court fit is applied). */
+export function buildRawInitialState(
   stroke: StrokeId,
   tuning: StrokeTuning,
 ): BallState {
@@ -74,4 +76,11 @@ export function buildInitialState(
     velocity: v3(0, vy, vz),
     omega,
   }
+}
+
+export function buildInitialState(
+  stroke: StrokeId,
+  tuning: StrokeTuning,
+): BallState {
+  return fitInitialStateToCourt(buildRawInitialState(stroke, tuning))
 }

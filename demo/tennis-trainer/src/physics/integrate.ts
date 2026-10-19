@@ -1,3 +1,4 @@
+import { isPositionInSinglesCourt } from '../court/bounds'
 import { BALL_MASS_KG } from './constants'
 import type { BallState, SimOptions, TrajectoryPoint } from './types'
 import { add, scale } from './vec3'
@@ -71,6 +72,7 @@ export function integrateTrajectory(
   const dt = options.dt ?? DEFAULT_DT
   const maxPoints = options.maxPoints ?? 4000
   const stopAtGround = options.stopAtGround ?? true
+  const stopAtCourtBounds = options.stopAtCourtBounds ?? false
   const simOptions: SimOptions = {
     enableGravity: options.enableGravity ?? true,
     enableDrag: options.enableDrag ?? true,
@@ -85,6 +87,12 @@ export function integrateTrajectory(
     state = stepState(state, dt, simOptions)
     t += dt
     if (stopAtGround && state.position.y < -0.05) break
+    if (
+      stopAtCourtBounds &&
+      !isPositionInSinglesCourt(state.position.x, state.position.z)
+    ) {
+      break
+    }
     points.push({ ...state, t })
   }
 

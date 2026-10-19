@@ -47,12 +47,12 @@ export default function App() {
 
   const trajectoryA = useMemo(() => {
     const initial = buildInitialState(strokeA, tuning)
-    return integrateTrajectory(initial, SIM_DURATION)
+    return integrateTrajectory(initial, SIM_DURATION, { stopAtCourtBounds: true })
   }, [strokeA, tuning])
 
   const trajectoryB = useMemo(() => {
     const initial = buildInitialState(strokeB, tuning)
-    return integrateTrajectory(initial, SIM_DURATION)
+    return integrateTrajectory(initial, SIM_DURATION, { stopAtCourtBounds: true })
   }, [strokeB, tuning])
 
   const summaryA = useMemo(() => flightSummary(trajectoryA), [trajectoryA])

@@ -23,4 +23,6 @@ export type SimOptions = {
   maxPoints?: number
   /** Stop integration when ball falls below y=0 (default true). */
   stopAtGround?: boolean
+  /** Stop when ball crosses singles baseline/longitudinal bounds (default false). */
+  stopAtCourtBounds?: boolean
 }

@@ -8,7 +8,18 @@ import { integrateTrajectory } from '../physics/integrate'
 import type { BallState } from '../physics/types'
 import { scale, v3 } from '../physics/vec3'
 
-function scaleVelocity(state: BallState, factor: number): BallState {
+function scaleForFit(
+  state: BallState,
+  factor: number,
+  scenario: FitScenario,
+): BallState {
+  if (scenario === 'serve') {
+    return {
+      position: state.position,
+      velocity: scale(state.velocity, factor),
+      omega: state.omega,
+    }
+  }
   return {
     position: state.position,
     velocity: scale(state.velocity, factor),
@@ -79,12 +90,12 @@ export function fitInitialStateToCourt(
   scenario: FitScenario = 'rally',
 ): BallState {
   let factor = scenario === 'serve' ? 1.05 : 1.08
-  let fallback = scaleVelocity(initial, 0.52)
+  let fallback = scaleForFit(initial, 0.52, scenario)
   const limits = limitsForScenario(scenario)
 
   for (let i = 0; i < 44; i++) {
     if (factor < 0.34) break
-    let trial = trimLateral(scaleVelocity(initial, factor), scenario)
+    let trial = trimLateral(scaleForFit(initial, factor, scenario), scenario)
     const { x, z } = landingPosition(trial)
 
     if (isLandingOkForScenario(scenario, x, z)) {

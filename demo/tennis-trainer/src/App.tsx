@@ -65,10 +65,11 @@ export default function App() {
   const simOptions = useMemo(
     () => ({
       stopAtCourtBounds: true,
+      courtBoundsFirstFlightOnly: playMode === 'serve',
       enableBounce,
       maxBounces: 2,
     }),
-    [enableBounce],
+    [enableBounce, playMode],
   )
   const tuning = useMemo(() => ({ power, brush }), [power, brush])
 

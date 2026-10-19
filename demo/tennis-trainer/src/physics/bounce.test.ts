@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { BALL_RADIUS_M } from './constants'
-import { applyGroundBounce, detectGroundContact } from './bounce'
+import {
+  applyGroundBounce,
+  detectGroundContact,
+  spinVerticalKickFactor,
+} from './bounce'
 import { v3 } from './vec3'
 
 describe('ground bounce', () => {
@@ -25,6 +29,10 @@ describe('ground bounce', () => {
     expect(next.velocity.y).toBeLessThan(8)
   })
 
+  it('topspin increases vertical kick factor much more than flat spin', () => {
+    expect(spinVerticalKickFactor(420)).toBeGreaterThan(spinVerticalKickFactor(20) * 2)
+  })
+
   it('topspin bounce kicks forward more than flat bounce', () => {
     const base = {
       position: v3(0, 0.01, 6),
@@ -34,5 +42,6 @@ describe('ground bounce', () => {
     const flat = applyGroundBounce(base)
     const topspin = applyGroundBounce({ ...base, omega: v3(260, 0, 0) })
     expect(topspin.velocity.z).toBeGreaterThan(flat.velocity.z)
+    expect(topspin.velocity.y).toBeGreaterThan(flat.velocity.y * 1.4)
   })
 })

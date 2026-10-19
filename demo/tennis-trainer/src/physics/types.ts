@@ -29,6 +29,8 @@ export type SimOptions = {
   stopAtGround?: boolean
   /** Stop when ball crosses singles baseline/longitudinal bounds (default false). */
   stopAtCourtBounds?: boolean
+  /** 仅首段飞行限制界内（发球一弹后允许演示二跳弧线） */
+  courtBoundsFirstFlightOnly?: boolean
   /** 落地弹起（演示二跳） */
   enableBounce?: boolean
   /** 最多弹起次数（默认 2：一弹 + 二弹） */

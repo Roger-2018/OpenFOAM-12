@@ -74,34 +74,45 @@ export function buildRawInitialState(
   const brush = clamp01(tuning.brush)
 
   if (mode === 'serve') {
-    const speed = 34 + 16 * power
-    const launchAngle = deg(4 + 7 * brush)
-    const vy = speed * Math.sin(launchAngle) + 1.2 + 2.5 * brush
-    const vz = speed * Math.cos(launchAngle)
-    const side = 0.35 + 0.45 * brush
+    let speed = 34 + 16 * power
+    let launchAngle = deg(4 + 7 * brush)
+    let side = 0.35 + 0.45 * brush
+    let tossY = 2.65 + 0.55 * brush
 
     let omega = v3(0, 0, 0)
     switch (stroke) {
       case 'flat':
-        omega = v3(30 * brush, 0, 0)
+        speed = 40 + 14 * power
+        launchAngle = deg(1.5 + 2.5 * brush)
+        side = 0.15 + 0.2 * brush
+        omega = v3(8 + 22 * brush, 0, 0)
         break
       case 'topspin':
-        omega = v3(120 + 380 * brush, 0, 0)
+        speed = 30 + 12 * power
+        launchAngle = deg(10 + 16 * brush)
+        tossY = 2.85 + 0.75 * brush
+        side = 0.25 + 0.35 * brush
+        omega = v3(220 + 580 * brush, 0, 0)
         break
       case 'slice':
-        omega = v3(-(80 + 320 * brush), 0, 0)
+        speed = 32 + 13 * power
+        launchAngle = deg(6 + 9 * brush)
+        side = 0.5 + 0.55 * brush
+        omega = v3(-(120 + 420 * brush), 0, 0)
         break
       case 'sideSpin':
-        omega = v3(50 * brush, 220 + 260 * brush, 0)
+        speed = 33 + 13 * power
+        launchAngle = deg(5 + 8 * brush)
+        side = 0.55 + 0.65 * brush
+        omega = v3(60 * brush, 260 + 320 * brush, 0)
         break
     }
 
+    const vy = speed * Math.sin(launchAngle) + 1.2 + 2.5 * brush
+    const vz = speed * Math.cos(launchAngle)
+
     return {
-      position: v3(
-        0.55,
-        2.65 + 0.55 * brush,
-        START_Z.serve,
-      ),
+      position: v3(0.55, tossY, START_Z.serve),
       velocity: v3(side, vy, vz),
       omega,
     }

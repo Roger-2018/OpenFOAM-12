@@ -58,11 +58,26 @@ function bounce1Copy(stroke: StrokeId): CoachTip {
 
 function flightCopy(stroke: StrokeId, playMode: PlayMode): CoachTip {
   if (playMode === 'serve') {
+    if (stroke === 'topspin') {
+      return {
+        kind: 'flight',
+        title: '上旋发球（Kick）',
+        body:
+          '抛球更高、刷球更狠，球进区后会弹得又高又冲——留意二弹比平击发球高很多！',
+      }
+    }
+    if (stroke === 'flat') {
+      return {
+        kind: 'flight',
+        title: '平击发球',
+        body: '几乎不转，球速快、线路直，落地后弹起较低，不像上旋那样「蹦高」。',
+      }
+    }
     return {
       kind: 'flight',
       title: '看球飞过网',
       body:
-        '发球从底线打出，弧线要高 enough 过网，再掉进对面发球区。旋转会让落点更刁钻。',
+        '发球从底线打出，弧线要过网，再掉进对面发球区。不同旋转，弹起高度差很多。',
     }
   }
   switch (stroke) {

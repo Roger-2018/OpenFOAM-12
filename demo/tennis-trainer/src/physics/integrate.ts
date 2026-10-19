@@ -76,6 +76,8 @@ export function integrateTrajectory(
   const maxBounces = options.maxBounces ?? 2
   const stopAtGround = enableBounce ? false : (options.stopAtGround ?? true)
   const stopAtCourtBounds = options.stopAtCourtBounds ?? false
+  const courtBoundsFirstFlightOnly =
+    options.courtBoundsFirstFlightOnly ?? false
   const simOptions: SimOptions = {
     enableGravity: options.enableGravity ?? true,
     enableDrag: options.enableDrag ?? true,
@@ -112,8 +114,11 @@ export function integrateTrajectory(
     }
 
     if (stopAtGround && state.position.y < BALL_RADIUS_M - 0.02) break
-    if (
+    const enforceCourtBounds =
       stopAtCourtBounds &&
+      !(courtBoundsFirstFlightOnly && bounceCount > 0)
+    if (
+      enforceCourtBounds &&
       !isPositionInSinglesCourt(state.position.x, state.position.z)
     ) {
       break

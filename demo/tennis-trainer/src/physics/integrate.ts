@@ -91,10 +91,23 @@ export function integrateTrajectory(
   let bounceCount = 0
   let flightSegment = 0
   let groundCooldownUntil = -1
+  /** 已达 maxBounces：在最后一弹后的反弹顶点结束，避免轨迹再画第三次落地。 */
+  let stopAtReboundApexAfterLastBounce = false
+  let prevVy = initial.velocity.y
 
   while (t < durationSec && points.length < maxPoints) {
     state = stepState(state, dt, simOptions)
     t += dt
+
+    if (
+      stopAtReboundApexAfterLastBounce &&
+      prevVy > 0 &&
+      state.velocity.y <= 0
+    ) {
+      points.push({ ...state, t, flightSegment })
+      break
+    }
+    prevVy = state.velocity.y
 
     if (
       enableBounce &&
@@ -102,22 +115,16 @@ export function integrateTrajectory(
       detectGroundContact(state)
     ) {
       if (bounceCount >= maxBounces) {
-        state = {
-          ...state,
-          position: {
-            ...state.position,
-            y: BALL_RADIUS_M,
-          },
-          velocity: { x: 0, y: 0, z: 0 },
-          omega: { x: 0, y: 0, z: 0 },
-        }
-        points.push({ ...state, t, flightSegment })
         break
       }
       state = applyGroundBounce(state)
       bounceCount++
       flightSegment = bounceCount
       groundCooldownUntil = t + 0.09
+      if (bounceCount >= maxBounces) {
+        stopAtReboundApexAfterLastBounce = true
+        prevVy = state.velocity.y
+      }
       points.push({
         ...state,
         t,

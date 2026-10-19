@@ -123,6 +123,14 @@ npm run dev
 | Phase 2 | 基本完成 | 大号网球、二跳、球色、**0.5×/0.25× 慢放**、**小教练口播提示** |
 | Phase 3 | 计划 | OpenFOAM 系数表、出界对比模式 |
 
+## OpenFOAM 系数对接
+
+见 **[docs/openfoam-coefficients.md](./docs/openfoam-coefficients.md)**：风洞算例思路、CSV 格式、`npm run import-aero` 导入步骤。
+
+```bash
+npm run import-aero -- tools/openfoam/sample-forces.csv
+```
+
 ## 说明
 
-模型为教学用简化：常数 \(C_d\)、自旋参数化 \(C_l\)，未建模毛毡/缝线细节。后续可用 OpenFOAM 风洞算例导出系数表替换 `physics/constants.ts` 与 `liftCoefficient`。
+飞行段：\(C_d、C_l\) 来自 **CSV 插值**（默认演示表，可换 OpenFOAM 导出）。落地/界内校准仍为教学模型；见文档「落地系数」扩展节。

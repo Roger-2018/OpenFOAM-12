@@ -22,6 +22,7 @@ import {
   advanceSimulationTime,
   type PlaybackRate,
 } from './playback/playbackRate'
+import { useAeroTableLoader } from './hooks/useAeroTableLoader'
 function strokeSelect(
   id: StrokeId,
   current: StrokeId,
@@ -129,6 +130,12 @@ export default function App() {
 
   const activePreset = STROKE_PRESETS[strokeA]
   const modeInfo = PLAY_MODE_LABELS[playMode]
+  const { source: aeroSource } = useAeroTableLoader()
+
+  const aeroLabel =
+    aeroSource === 'openfoam-csv'
+      ? '气动力：OpenFOAM/CSV 系数表'
+      : '气动力：演示系数表（可 import-aero 替换）'
 
   return (
     <div className="app">
@@ -137,6 +144,7 @@ export default function App() {
           <h1>网球轨迹演示</h1>
           <p className="subtitle">
             底线发球进发球区，或底线相持深球对比上旋/切削/侧旋（简化物理，便于入门）。
+            <span className="aero-badge">{aeroLabel}</span>
           </p>
         </div>
         <div className="legend">

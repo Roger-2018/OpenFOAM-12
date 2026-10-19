@@ -12,7 +12,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "npx vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "import-aero": "node tools/import-aero.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

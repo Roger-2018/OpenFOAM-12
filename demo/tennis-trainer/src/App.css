@@ -26,6 +26,17 @@
   max-width: 52rem;
 }
 
+.aero-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #334155;
+}
+
 .legend {
   display: flex;
   align-items: center;

@@ -1,10 +1,9 @@
+import { analyticLiftCoefficient, getAeroCoefficients } from './aeroProvider'
 import {
   AIR_DENSITY,
   BALL_CROSS_SECTION,
   BALL_MASS_KG,
-  DRAG_COEFFICIENT,
   GRAVITY,
-  BALL_RADIUS_M,
 } from './constants'
 import type { BallState, ForceBreakdown, SimOptions } from './types'
 import { add, cross, length, normalize, scale, v3 } from './vec3'
@@ -16,8 +15,7 @@ const defaultOpts = {
 }
 
 export function liftCoefficient(spinParameter: number): number {
-  const sp = Math.min(spinParameter, 2.5)
-  return Math.min(0.65, (0.18 * sp) / (1 + 0.35 * sp))
+  return analyticLiftCoefficient(Math.min(spinParameter, 2.5))
 }
 
 export function computeForces(
@@ -34,18 +32,17 @@ export function computeForces(
 
   const speed = length(state.velocity)
   let drag = v3(0, 0, 0)
+  const spinMag = length(state.omega)
+  const { cd, cl } = getAeroCoefficients(speed, spinMag)
+
   if (opts.enableDrag && speed > 1e-6) {
-    const magnitude =
-      0.5 * AIR_DENSITY * DRAG_COEFFICIENT * BALL_CROSS_SECTION * speed
+    const magnitude = 0.5 * AIR_DENSITY * cd * BALL_CROSS_SECTION * speed
     drag = scale(state.velocity, -magnitude)
   }
 
   let magnus = v3(0, 0, 0)
   if (opts.enableMagnus && speed > 1e-6) {
-    const spinMag = length(state.omega)
     if (spinMag > 1e-6) {
-      const spinParameter = (BALL_RADIUS_M * spinMag) / speed
-      const cl = liftCoefficient(spinParameter)
       const crossDir = cross(state.omega, state.velocity)
       const crossLen = length(crossDir)
       if (crossLen > 1e-9) {

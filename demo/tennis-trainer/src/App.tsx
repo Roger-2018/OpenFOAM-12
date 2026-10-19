@@ -1,0 +1,409 @@
+import { useEffect, useMemo, useState } from 'react'
+import './App.css'
+import { TennisScene, type CameraPreset } from './components/TennisScene'
+import { flightSummary, integrateTrajectory } from './physics/integrate'
+import {
+  PLAY_MODE_LABELS,
+  STROKE_PRESETS,
+  buildInitialState,
+  strokeDisplayLabel,
+  type PlayMode,
+  type StrokeId,
+} from './presets/strokes'
+import {
+  BALL_COLOR_PRESETS,
+  type BallColorId,
+} from './visual/ballColorPresets'
+import { CoachBanner } from './components/CoachBanner'
+import { pickCoachTip } from './education/coachTip'
+import {
+  PLAYBACK_RATE_LABELS,
+  PLAYBACK_RATES,
+  advanceSimulationTime,
+  type PlaybackRate,
+} from './playback/playbackRate'
+import { useAeroTableLoader } from './hooks/useAeroTableLoader'
+function strokeSelect(
+  id: StrokeId,
+  current: StrokeId,
+  mode: PlayMode,
+  onChange: (s: StrokeId) => void,
+) {
+  return (
+    <button
+      key={id}
+      type="button"
+      className={current === id ? 'chip active' : 'chip'}
+      style={
+        current === id
+          ? { borderColor: STROKE_PRESETS[id].color, color: STROKE_PRESETS[id].color }
+          : undefined
+      }
+      onClick={() => onChange(id)}
+    >
+      {strokeDisplayLabel(id, mode)}
+    </button>
+  )
+}
+
+export default function App() {
+  const [playMode, setPlayMode] = useState<PlayMode>('serve')
+  const [strokeA, setStrokeA] = useState<StrokeId>('flat')
+  const [strokeB, setStrokeB] = useState<StrokeId>('topspin')
+  const [compare, setCompare] = useState(true)
+  const [power, setPower] = useState(0.78)
+  const [brush, setBrush] = useState(0.72)
+  const [time, setTime] = useState(0)
+  const [playing, setPlaying] = useState(true)
+  const [showForces, setShowForces] = useState(true)
+  const [kidFriendlyBall, setKidFriendlyBall] = useState(true)
+  const [ballColor, setBallColor] = useState<BallColorId>('classic')
+  const [enableBounce, setEnableBounce] = useState(true)
+  const [playbackRate, setPlaybackRate] = useState<PlaybackRate>(0.5)
+  const [camera, setCamera] = useState<CameraPreset>('baseline')
+
+  const simDuration = playMode === 'serve' ? 4.6 : 4.2
+  const simOptions = useMemo(
+    () => ({
+      stopAtCourtBounds: true,
+      courtBoundsFirstFlightOnly: playMode === 'serve',
+      enableBounce,
+      maxBounces: 2,
+    }),
+    [enableBounce, playMode],
+  )
+  const tuning = useMemo(() => ({ power, brush }), [power, brush])
+
+  const trajectoryA = useMemo(() => {
+    const initial = buildInitialState(strokeA, tuning, playMode)
+    return integrateTrajectory(initial, simDuration, simOptions)
+  }, [strokeA, tuning, playMode, simDuration, simOptions])
+
+  const trajectoryB = useMemo(() => {
+    const initial = buildInitialState(strokeB, tuning, playMode)
+    return integrateTrajectory(initial, simDuration, simOptions)
+  }, [strokeB, tuning, playMode, simDuration, simOptions])
+
+  const summaryA = useMemo(() => flightSummary(trajectoryA), [trajectoryA])
+  const summaryB = useMemo(() => flightSummary(trajectoryB), [trajectoryB])
+
+  const coachTip = useMemo(
+    () =>
+      pickCoachTip({
+        stroke: strokeA,
+        playMode,
+        time,
+        enableBounce,
+        firstBounceT: summaryA.firstLanding?.t ?? null,
+        secondBounceT: summaryA.secondLanding?.t ?? null,
+      }),
+    [strokeA, playMode, time, enableBounce, summaryA],
+  )
+
+  useEffect(() => {
+    setTime(0)
+  }, [strokeA, strokeB, power, brush, playMode, enableBounce, ballColor, playbackRate])
+
+  useEffect(() => {
+    if (!playing) return
+    let frame = 0
+    let last = performance.now()
+    const tick = (now: number) => {
+      const dt = (now - last) / 1000
+      last = now
+      setTime((t) => advanceSimulationTime(t, dt, playbackRate, simDuration))
+      frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [
+    playing,
+    strokeA,
+    strokeB,
+    power,
+    brush,
+    playMode,
+    simDuration,
+    enableBounce,
+    playbackRate,
+  ])
+
+  const activePreset = STROKE_PRESETS[strokeA]
+  const modeInfo = PLAY_MODE_LABELS[playMode]
+  const { source: aeroSource } = useAeroTableLoader()
+
+  const aeroLabel =
+    aeroSource === 'openfoam-csv'
+      ? '气动力：OpenFOAM/CSV 系数表'
+      : '气动力：演示系数表（可 import-aero 替换）'
+
+  return (
+    <div className="app">
+      <header className="header">
+        <div>
+          <h1>网球轨迹演示</h1>
+          <p className="subtitle">
+            底线发球进发球区，或底线相持深球对比上旋/切削/侧旋（简化物理，便于入门）。
+            <span className="aero-badge">{aeroLabel}</span>
+          </p>
+        </div>
+        <div className="legend">
+          <span className="dot" style={{ background: STROKE_PRESETS[strokeA].color }} />
+          A: {strokeDisplayLabel(strokeA, playMode)}
+          {compare && (
+            <>
+              <span className="dot" style={{ background: STROKE_PRESETS[strokeB].color }} />
+              B: {strokeDisplayLabel(strokeB, playMode)}
+            </>
+          )}
+        </div>
+      </header>
+
+      <div className="layout">
+        <aside className="panel">
+          <section>
+            <h2>场景</h2>
+            <div className="chips">
+              {(['serve', 'rally'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={playMode === mode ? 'chip active' : 'chip'}
+                  onClick={() => setPlayMode(mode)}
+                >
+                  {PLAY_MODE_LABELS[mode].label}
+                </button>
+              ))}
+            </div>
+            <p className="mode-hint">{modeInfo.description}</p>
+          </section>
+
+          <section>
+            <h2>轨迹 A</h2>
+            <div className="chips">
+              {(Object.keys(STROKE_PRESETS) as StrokeId[]).map((id) =>
+                strokeSelect(id, strokeA, playMode, setStrokeA),
+              )}
+            </div>
+          </section>
+
+          <section>
+            <label className="row">
+              <input
+                type="checkbox"
+                checked={compare}
+                onChange={(e) => setCompare(e.target.checked)}
+              />
+              对比轨迹 B
+            </label>
+            {compare && (
+              <>
+                <h2>轨迹 B</h2>
+                <div className="chips">
+                  {(Object.keys(STROKE_PRESETS) as StrokeId[]).map((id) =>
+                    strokeSelect(id, strokeB, playMode, setStrokeB),
+                  )}
+                </div>
+              </>
+            )}
+          </section>
+
+          <section>
+            <h2>{playMode === 'serve' ? '发球感觉' : '击球感觉'}</h2>
+            <label>
+              力量 {Math.round(power * 100)}%
+              <input
+                type="range"
+                min={0.35}
+                max={1}
+                step={0.01}
+                value={power}
+                onChange={(e) => setPower(Number(e.target.value))}
+              />
+            </label>
+            <label>
+              {playMode === 'serve' ? '抛球/刷球' : '刷球'}{' '}
+              {Math.round(brush * 100)}%
+              <input
+                type="range"
+                min={0.1}
+                max={1}
+                step={0.01}
+                value={brush}
+                onChange={(e) => setBrush(Number(e.target.value))}
+              />
+            </label>
+          </section>
+
+          <section>
+            <h2>网球颜色</h2>
+            <div className="chips color-chips">
+              {(Object.keys(BALL_COLOR_PRESETS) as BallColorId[]).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={ballColor === id ? 'chip active color-chip' : 'chip color-chip'}
+                  style={{
+                    borderColor: BALL_COLOR_PRESETS[id].colors.felt,
+                    background:
+                      ballColor === id
+                        ? `${BALL_COLOR_PRESETS[id].colors.felt}33`
+                        : undefined,
+                  }}
+                  onClick={() => setBallColor(id)}
+                >
+                  {BALL_COLOR_PRESETS[id].label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <h2>视角</h2>
+            <div className="chips">
+              {(
+                [
+                  ['baseline', '底线'],
+                  ['side', '侧面'],
+                  ['top', '俯视'],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={camera === id ? 'chip active' : 'chip'}
+                  onClick={() => setCamera(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <h2>播放速度</h2>
+            <div className="chips">
+              {PLAYBACK_RATES.map((rate) => (
+                <button
+                  key={rate}
+                  type="button"
+                  className={playbackRate === rate ? 'chip active' : 'chip'}
+                  onClick={() => setPlaybackRate(rate)}
+                >
+                  {PLAYBACK_RATE_LABELS[rate]}
+                </button>
+              ))}
+            </div>
+            <p className="mode-hint">默认 0.5× 慢放，方便小朋友看清一弹、二弹。</p>
+          </section>
+
+          <section className="tips">
+            <h2>{strokeDisplayLabel(strokeA, playMode)}</h2>
+            <p>{activePreset.description}</p>
+            <CoachBanner tip={coachTip} />
+            <label className="row">
+              <input
+                type="checkbox"
+                checked={kidFriendlyBall}
+                onChange={(e) => setKidFriendlyBall(e.target.checked)}
+              />
+              大号网球（适合 5 岁左右儿童辨认）
+            </label>
+            <label className="row">
+              <input
+                type="checkbox"
+                checked={enableBounce}
+                onChange={(e) => setEnableBounce(e.target.checked)}
+              />
+              落地二跳（黄圈=一弹，橙圈=二弹）
+            </label>
+            <label className="row">
+              <input
+                type="checkbox"
+                checked={showForces}
+                onChange={(e) => setShowForces(e.target.checked)}
+              />
+              显示力矢量（灰=重力，橙=阻力，绿=Magnus）
+            </label>
+          </section>
+
+          <section className="metrics">
+            <h2>读数</h2>
+            <ul>
+              <li>
+                A 过网高度:{' '}
+                {summaryA.netClearance != null
+                  ? `${summaryA.netClearance.toFixed(2)} m`
+                  : '—'}
+              </li>
+              <li>A 最高点: {summaryA.maxHeight.toFixed(2)} m</li>
+              <li>
+                A 最终停点: x={summaryA.landing.x.toFixed(2)} m, z=
+                {summaryA.landing.z.toFixed(2)} m
+              </li>
+              {summaryA.firstLanding && (
+                <li>
+                  A 一弹: z={summaryA.firstLanding.z.toFixed(2)} m
+                  {summaryA.secondLanding &&
+                    ` → 二弹: z=${summaryA.secondLanding.z.toFixed(2)} m`}
+                </li>
+              )}
+              {playMode === 'serve' && (
+                <li className="hint">发球模式：落点应落在黄色占先发球区</li>
+              )}
+              {compare && (
+                <>
+                  <li>
+                    B 过网高度:{' '}
+                    {summaryB.netClearance != null
+                      ? `${summaryB.netClearance.toFixed(2)} m`
+                      : '—'}
+                  </li>
+                  <li>B 最高点: {summaryB.maxHeight.toFixed(2)} m</li>
+                </>
+              )}
+            </ul>
+          </section>
+        </aside>
+
+        <main className="viewport">
+          <div className="viewport-coach">
+            <CoachBanner tip={coachTip} />
+          </div>
+          <TennisScene
+            trajectoryA={trajectoryA}
+            trajectoryB={trajectoryB}
+            colorA={STROKE_PRESETS[strokeA].color}
+            colorB={STROKE_PRESETS[strokeB].color}
+            compare={compare}
+            time={time}
+            showForces={showForces}
+            camera={camera}
+            playMode={playMode}
+            kidFriendlyBall={kidFriendlyBall}
+            ballColor={ballColor}
+          />
+          <div className="timeline">
+            <button type="button" onClick={() => setPlaying((p) => !p)}>
+              {playing ? '暂停' : '播放'}
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={simDuration}
+              step={0.01}
+              value={time}
+              onChange={(e) => {
+                setPlaying(false)
+                setTime(Number(e.target.value))
+              }}
+            />
+            <span>
+              {time.toFixed(2)} s · {PLAYBACK_RATE_LABELS[playbackRate]}
+            </span>
+          </div>
+        </main>
+      </div>
+    </div>
+  )
+}

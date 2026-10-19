@@ -1,0 +1,29 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  网球气动参考量（与 tennis-trainer App 一致，供后处理脚本读取）
+\*---------------------------------------------------------------------------*/
+
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      tennisBallAeroRefs;
+}
+
+// 球半径 [m]
+ballRadius      0.034;
+
+// 空气运动粘度 [m²/s]（20°C 量级）
+nu              1.5e-5;
+
+// 本算例来流速度大小 [m/s]（需与 forceCoeffs 中 magUInf、边界 U 一致）
+Uinf            35;
+
+// 球体绕 x 轴角速度 [rad/s]（上旋为正，与 rotatingWallVelocity 一致）
+omegaX          400;
+
+// 可选备注
+notes           "steady sphere wind tunnel";
+
+
+// ************************************************************************* //

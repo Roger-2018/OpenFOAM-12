@@ -1,0 +1,10 @@
+Re,spin_param,Cd,Cl,notes
+80000,0.00,0.580,0.000,openfoam-sphere-steady-example
+80000,0.35,0.585,0.095,openfoam-sphere-steady-example
+80000,0.70,0.592,0.138,openfoam-sphere-steady-example
+120000,0.00,0.520,0.000,openfoam-sphere-steady-example
+120000,0.35,0.528,0.110,openfoam-sphere-steady-example
+120000,0.70,0.535,0.155,openfoam-sphere-steady-example
+160000,0.00,0.495,0.000,openfoam-sphere-steady-example
+160000,0.35,0.502,0.118,openfoam-sphere-steady-example
+160000,0.70,0.510,0.162,openfoam-sphere-steady-example

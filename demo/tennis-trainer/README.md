@@ -60,6 +60,8 @@ npm run preview
 | 没有 `demo/tennis-trainer` 目录 | 仍在 `master`，演示未合并 | `git checkout cursor/tennis-trainer-mvp-e8ff` |
 | `npm: command not found` | 未安装 Node | 安装 LTS Node 22，重开终端 |
 | `npm install` 报错 / Vite 起不来 | Node 版本过旧 | 升级到 ≥20.19 或 ≥22.12；本目录有 `.nvmrc`：`nvm use` |
+| `EACCES` / `permission denied` 在 `~/.npm/_cacache` | 全局 npm 缓存目录权限损坏（曾用 sudo npm） | 见下方 **Mac：npm 权限错误** |
+| `sh: vite: command not found` | `npm install` 未成功，`node_modules` 不完整 | 先修复 install，再 `npm run dev` |
 | 浏览器无法连接 localhost | 未在本目录执行 `npm run dev` | 确认终端进程在跑、无报错 |
 | 端口被占用 | 5173 已被占用 | 终端会换端口，看新 URL；或关掉占用 5173 的程序 |
 | 想用手机同 WiFi 看 | 需局域网地址 | 用终端里的 **Network** URL（`npm run dev` 已 `host: true`） |
@@ -67,6 +69,32 @@ npm run preview
 | 公司网络限制 | 依赖从 npm 下载 | 检查代理 / 换网络后重试 `npm install` |
 
 仍有问题：把 **`node -v`、`npm run dev` 完整终端输出**、浏览器 **F12 控制台** 截图发出来便于定位。
+
+### Mac：npm 权限错误（EACCES）
+
+若出现 `EACCES: permission denied, rename ... ~/.npm/_cacache`：
+
+**做法 A（推荐，本项目已配置）** — 使用项目内缓存，不碰 `~/.npm`：
+
+```bash
+cd demo/tennis-trainer
+git pull   # 确保有 .npmrc（cache=.npm-cache）
+rm -rf node_modules
+npm install
+npm run dev
+```
+
+**做法 B** — 修复用户目录下 npm 缓存属主（只需做一次）：
+
+```bash
+sudo chown -R "$(whoami)" ~/.npm
+cd demo/tennis-trainer
+rm -rf node_modules
+npm install
+npm run dev
+```
+
+若终端曾提示 `NODE_TLS_REJECT_UNAUTHORIZED=0`，说明环境里关闭了 TLS 校验；能装包则可忽略，若 install 仍失败需检查公司代理或换网络。
 
 ---
 

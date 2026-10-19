@@ -1,5 +1,6 @@
 import { isPositionInSinglesCourt } from '../court/bounds'
 import { applyGroundBounce, detectGroundContact } from './bounce'
+import { listGroundBounces } from './groundBounces'
 import { BALL_MASS_KG, BALL_RADIUS_M } from './constants'
 import type { BallState, SimOptions, TrajectoryPoint } from './types'
 import { add, scale } from './vec3'
@@ -89,12 +90,17 @@ export function integrateTrajectory(
   let t = 0
   let bounceCount = 0
   let flightSegment = 0
+  let groundCooldownUntil = -1
 
   while (t < durationSec && points.length < maxPoints) {
     state = stepState(state, dt, simOptions)
     t += dt
 
-    if (enableBounce && detectGroundContact(state)) {
+    if (
+      enableBounce &&
+      t >= groundCooldownUntil &&
+      detectGroundContact(state)
+    ) {
       if (bounceCount >= maxBounces) {
         state = {
           ...state,
@@ -111,6 +117,14 @@ export function integrateTrajectory(
       state = applyGroundBounce(state)
       bounceCount++
       flightSegment = bounceCount
+      groundCooldownUntil = t + 0.09
+      points.push({
+        ...state,
+        t,
+        flightSegment,
+        groundBounceIndex: bounceCount as 1 | 2,
+      })
+      continue
     }
 
     if (stopAtGround && state.position.y < BALL_RADIUS_M - 0.02) break
@@ -171,23 +185,13 @@ export function flightSummary(points: TrajectoryPoint[]) {
   const end = points[points.length - 1]
   const netCross = points.find((p) => p.position.z >= 0)
 
-  const bounces: { t: number; x: number; z: number; index: number }[] = []
-  for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1]
-    const cur = points[i]
-    if (
-      prev.velocity.y < 0 &&
-      cur.velocity.y > 0 &&
-      cur.position.y < BALL_RADIUS_M + 0.15
-    ) {
-      bounces.push({
-        t: cur.t,
-        x: cur.position.x,
-        z: cur.position.z,
-        index: bounces.length + 1,
-      })
-    }
-  }
+  const marks = listGroundBounces(points)
+  const bounces = marks.map((m) => ({
+    t: m.t,
+    x: m.x,
+    z: m.z,
+    index: m.index,
+  }))
 
   return {
     duration: end.t,

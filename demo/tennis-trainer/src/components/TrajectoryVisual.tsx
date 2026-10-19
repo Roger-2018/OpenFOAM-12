@@ -1,5 +1,6 @@
 import { Line, Ring } from '@react-three/drei'
 import { useMemo } from 'react'
+import { listGroundBounces } from '../physics/groundBounces'
 import type { TrajectoryPoint } from '../physics/types'
 import { acceleration } from '../physics/forces'
 import { ArrowHelper, Vector3 } from 'three'
@@ -19,25 +20,6 @@ function vecToThree(v: { x: number; y: number; z: number }) {
   return [v.x, v.y, v.z] as [number, number, number]
 }
 
-function bounceMarkers(points: TrajectoryPoint[]) {
-  const marks: { pos: [number, number, number]; n: number }[] = []
-  for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1]
-    const cur = points[i]
-    if (
-      prev.velocity.y < 0 &&
-      cur.velocity.y > 0 &&
-      cur.position.y < 0.12
-    ) {
-      marks.push({
-        pos: [cur.position.x, 0.025, cur.position.z],
-        n: marks.length + 1,
-      })
-    }
-  }
-  return marks
-}
-
 export function TrajectoryVisual({
   points,
   color,
@@ -51,7 +33,14 @@ export function TrajectoryVisual({
     [points],
   )
 
-  const bounces = useMemo(() => bounceMarkers(points), [points])
+  const bounces = useMemo(
+    () =>
+      listGroundBounces(points).map((m) => ({
+        pos: [m.x, 0.025, m.z] as [number, number, number],
+        n: m.index,
+      })),
+    [points],
+  )
 
   const sample = useMemo(() => {
     if (points.length === 0) return null

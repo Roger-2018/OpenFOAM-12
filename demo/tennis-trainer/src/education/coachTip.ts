@@ -130,9 +130,9 @@ export function pickCoachTip(input: CoachTipInput): CoachTip {
   if (enableBounce && near(time, secondBounceT)) {
     return {
       kind: 'bounce2',
-      title: '二弹：球再弹一次',
+      title: '二弹：第二下触地',
       body:
-        '第二次弹起更小、更慢。上旋球有时二弹还会往前溜一点，对手最难接。',
+        '整段演示只有一弹、二弹两次弹起，第三下会停球。上旋二弹往往仍比平击更高、更冲。',
     }
   }
 

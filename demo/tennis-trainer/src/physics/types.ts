@@ -10,6 +10,8 @@ export type TrajectoryPoint = BallState & {
   t: number
   /** 0=首段飞行，1=一弹后，2=二弹后 */
   flightSegment?: number
+  /** 触地弹起序号（仅 1 或 2，用于标记一弹/二弹） */
+  groundBounceIndex?: 1 | 2
 }
 
 export type ForceBreakdown = {

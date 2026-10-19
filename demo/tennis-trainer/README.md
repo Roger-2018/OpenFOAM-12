@@ -114,6 +114,15 @@ npm run dev
 - `src/components/` — Three.js 球场、轨迹、力矢量
 - `src/court/` — ITF 单打尺寸常量
 
+## 开发阶段
+
+| 阶段 | 状态 | 内容 |
+|------|------|------|
+| Phase 0 | 完成 | 2D/3D 轨迹、四种挥拍、对比播放 |
+| Phase 1 | 完成 | 3D 球场、多视角、底线发球/相持、界内校准 |
+| Phase 2 | 进行中 | **大号荧光网球**、旋转动画、轨迹加粗；后续：二跳、更细文案 |
+| Phase 3 | 计划 | OpenFOAM 系数表、出界对比模式 |
+
 ## 说明
 
 模型为教学用简化：常数 \(C_d\)、自旋参数化 \(C_l\)，未建模毛毡/缝线细节。后续可用 OpenFOAM 风洞算例导出系数表替换 `physics/constants.ts` 与 `liftCoefficient`。

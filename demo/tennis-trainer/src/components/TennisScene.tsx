@@ -27,6 +27,7 @@ type Props = {
   showForces: boolean
   camera: CameraPreset
   playMode: PlayMode
+  kidFriendlyBall: boolean
 }
 
 function SceneContent({
@@ -39,6 +40,7 @@ function SceneContent({
   showForces,
   camera,
   playMode,
+  kidFriendlyBall,
 }: Props) {
   const cam = CAMERA[camera]
   const baselineZ = -COURT.halfLength
@@ -62,6 +64,7 @@ function SceneContent({
         color={colorA}
         time={time}
         showForces={showForces}
+        kidFriendlyBall={kidFriendlyBall}
       />
       {compare && (
         <TrajectoryVisual
@@ -69,6 +72,7 @@ function SceneContent({
           color={colorB}
           time={time}
           showForces={false}
+          kidFriendlyBall={kidFriendlyBall}
         />
       )}
     </>

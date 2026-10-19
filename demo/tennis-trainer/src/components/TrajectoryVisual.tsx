@@ -1,21 +1,29 @@
-import { Line, Sphere } from '@react-three/drei'
+import { Line } from '@react-three/drei'
 import { useMemo } from 'react'
 import type { TrajectoryPoint } from '../physics/types'
 import { acceleration } from '../physics/forces'
 import { ArrowHelper, Vector3 } from 'three'
+import { TennisBallMesh } from './TennisBallMesh'
 
 type Props = {
   points: TrajectoryPoint[]
   color: string
   time: number
   showForces: boolean
+  kidFriendlyBall: boolean
 }
 
 function vecToThree(v: { x: number; y: number; z: number }) {
   return [v.x, v.y, v.z] as [number, number, number]
 }
 
-export function TrajectoryVisual({ points, color, time, showForces }: Props) {
+export function TrajectoryVisual({
+  points,
+  color,
+  time,
+  showForces,
+  kidFriendlyBall,
+}: Props) {
   const linePoints = useMemo(
     () => points.map((p) => vecToThree(p.position)),
     [points],
@@ -56,11 +64,20 @@ export function TrajectoryVisual({ points, color, time, showForces }: Props) {
 
   return (
     <group>
-      <Line points={linePoints} color={color} lineWidth={2} />
+      <Line
+        points={linePoints}
+        color={color}
+        lineWidth={kidFriendlyBall ? 3.5 : 2}
+        transparent
+        opacity={kidFriendlyBall ? 0.85 : 1}
+      />
       {sample && (
-        <Sphere args={[0.067, 24, 24]} position={vecToThree(sample.position)}>
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.35} />
-        </Sphere>
+        <TennisBallMesh
+          position={vecToThree(sample.position)}
+          omega={sample.omega}
+          kidFriendly={kidFriendlyBall}
+          accent={color}
+        />
       )}
       {forceArrows?.gravity && <primitive object={forceArrows.gravity} />}
       {forceArrows?.drag && <primitive object={forceArrows.drag} />}

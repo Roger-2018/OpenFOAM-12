@@ -44,6 +44,7 @@ export default function App() {
   const [time, setTime] = useState(0)
   const [playing, setPlaying] = useState(true)
   const [showForces, setShowForces] = useState(true)
+  const [kidFriendlyBall, setKidFriendlyBall] = useState(true)
   const [camera, setCamera] = useState<CameraPreset>('baseline')
 
   const simDuration = playMode === 'serve' ? 3.4 : 2.8
@@ -211,6 +212,14 @@ export default function App() {
             <label className="row">
               <input
                 type="checkbox"
+                checked={kidFriendlyBall}
+                onChange={(e) => setKidFriendlyBall(e.target.checked)}
+              />
+              大号网球（适合 5 岁左右儿童辨认）
+            </label>
+            <label className="row">
+              <input
+                type="checkbox"
                 checked={showForces}
                 onChange={(e) => setShowForces(e.target.checked)}
               />
@@ -261,6 +270,7 @@ export default function App() {
             showForces={showForces}
             camera={camera}
             playMode={playMode}
+            kidFriendlyBall={kidFriendlyBall}
           />
           <div className="timeline">
             <button type="button" onClick={() => setPlaying((p) => !p)}>

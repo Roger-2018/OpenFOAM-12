@@ -2,6 +2,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
 import { COURT } from '../court/dimensions'
 import type { PlayMode } from '../presets/strokes'
+import type { BallColorId } from '../visual/ballColorPresets'
 import { CourtSurface, Net } from './CourtSurface'
 import { TrajectoryVisual } from './TrajectoryVisual'
 import type { TrajectoryPoint } from '../physics/types'
@@ -28,6 +29,7 @@ type Props = {
   camera: CameraPreset
   playMode: PlayMode
   kidFriendlyBall: boolean
+  ballColor: BallColorId
 }
 
 function SceneContent({
@@ -41,6 +43,7 @@ function SceneContent({
   camera,
   playMode,
   kidFriendlyBall,
+  ballColor,
 }: Props) {
   const cam = CAMERA[camera]
   const baselineZ = -COURT.halfLength
@@ -65,6 +68,7 @@ function SceneContent({
         time={time}
         showForces={showForces}
         kidFriendlyBall={kidFriendlyBall}
+        ballColor={ballColor}
       />
       {compare && (
         <TrajectoryVisual
@@ -73,6 +77,7 @@ function SceneContent({
           time={time}
           showForces={false}
           kidFriendlyBall={kidFriendlyBall}
+          ballColor={ballColor}
         />
       )}
     </>

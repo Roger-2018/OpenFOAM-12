@@ -1,9 +1,10 @@
-import { Line } from '@react-three/drei'
+import { Line, Ring } from '@react-three/drei'
 import { useMemo } from 'react'
 import type { TrajectoryPoint } from '../physics/types'
 import { acceleration } from '../physics/forces'
 import { ArrowHelper, Vector3 } from 'three'
 import { TennisBallMesh } from './TennisBallMesh'
+import type { BallColorId } from '../visual/ballColorPresets'
 
 type Props = {
   points: TrajectoryPoint[]
@@ -11,10 +12,30 @@ type Props = {
   time: number
   showForces: boolean
   kidFriendlyBall: boolean
+  ballColor: BallColorId
 }
 
 function vecToThree(v: { x: number; y: number; z: number }) {
   return [v.x, v.y, v.z] as [number, number, number]
+}
+
+function bounceMarkers(points: TrajectoryPoint[]) {
+  const marks: { pos: [number, number, number]; n: number }[] = []
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1]
+    const cur = points[i]
+    if (
+      prev.velocity.y < 0 &&
+      cur.velocity.y > 0 &&
+      cur.position.y < 0.12
+    ) {
+      marks.push({
+        pos: [cur.position.x, 0.025, cur.position.z],
+        n: marks.length + 1,
+      })
+    }
+  }
+  return marks
 }
 
 export function TrajectoryVisual({
@@ -23,11 +44,14 @@ export function TrajectoryVisual({
   time,
   showForces,
   kidFriendlyBall,
+  ballColor,
 }: Props) {
   const linePoints = useMemo(
     () => points.map((p) => vecToThree(p.position)),
     [points],
   )
+
+  const bounces = useMemo(() => bounceMarkers(points), [points])
 
   const sample = useMemo(() => {
     if (points.length === 0) return null
@@ -71,11 +95,19 @@ export function TrajectoryVisual({
         transparent
         opacity={kidFriendlyBall ? 0.85 : 1}
       />
+      {bounces.map((b) => (
+        <group key={`${b.n}-${b.pos.join(',')}`} position={b.pos}>
+          <Ring args={[0.12, 0.16, 32]} rotation={[-Math.PI / 2, 0, 0]}>
+            <meshBasicMaterial color={b.n === 1 ? '#fde047' : '#f97316'} />
+          </Ring>
+        </group>
+      ))}
       {sample && (
         <TennisBallMesh
           position={vecToThree(sample.position)}
           omega={sample.omega}
           kidFriendly={kidFriendlyBall}
+          ballColor={ballColor}
           accent={color}
         />
       )}

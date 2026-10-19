@@ -1,8 +1,12 @@
 import { CanvasTexture, SRGBColorSpace } from 'three'
-import { TENNIS_BALL_COLORS } from './ballAppearance'
+import type { BallColorScheme } from './ballColorPresets'
+import { BALL_COLOR_PRESETS } from './ballColorPresets'
 
 /** 简易网球毛毡 + 白条缝线（教学用，非照片级）。 */
-export function createTennisBallTexture(size = 512): CanvasTexture {
+export function createTennisBallTexture(
+  colors: BallColorScheme = BALL_COLOR_PRESETS.classic.colors,
+  size = 512,
+): CanvasTexture {
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
@@ -19,13 +23,13 @@ export function createTennisBallTexture(size = 512): CanvasTexture {
     size * 0.5,
     size * 0.55,
   )
-  grd.addColorStop(0, '#eaff5c')
-  grd.addColorStop(0.55, TENNIS_BALL_COLORS.felt)
-  grd.addColorStop(1, TENNIS_BALL_COLORS.feltDark)
+  grd.addColorStop(0, colors.felt)
+  grd.addColorStop(0.55, colors.felt)
+  grd.addColorStop(1, colors.feltDark)
   ctx.fillStyle = grd
   ctx.fillRect(0, 0, size, size)
 
-  ctx.strokeStyle = TENNIS_BALL_COLORS.seam
+  ctx.strokeStyle = colors.seam
   ctx.lineWidth = size * 0.055
   ctx.lineCap = 'round'
 

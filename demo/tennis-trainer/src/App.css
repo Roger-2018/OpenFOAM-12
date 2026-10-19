@@ -86,6 +86,10 @@
   background: #1e293b;
 }
 
+.color-chips .color-chip {
+  min-width: 4.5rem;
+}
+
 .panel label {
   display: flex;
   flex-direction: column;

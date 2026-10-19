@@ -3,16 +3,18 @@ import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import type { Mesh } from 'three'
 import type { Vec3 } from '../physics/types'
+import { visualBallRadius } from '../visual/ballAppearance'
 import {
-  TENNIS_BALL_COLORS,
-  visualBallRadius,
-} from '../visual/ballAppearance'
+  BALL_COLOR_PRESETS,
+  type BallColorId,
+} from '../visual/ballColorPresets'
 import { createTennisBallTexture } from '../visual/tennisBallTexture'
 
 type Props = {
   position: [number, number, number]
   omega: Vec3
   kidFriendly: boolean
+  ballColor: BallColorId
   accent?: string
 }
 
@@ -20,10 +22,15 @@ export function TennisBallMesh({
   position,
   omega,
   kidFriendly,
+  ballColor,
   accent,
 }: Props) {
   const meshRef = useRef<Mesh>(null)
-  const texture = useMemo(() => createTennisBallTexture(), [])
+  const scheme = BALL_COLOR_PRESETS[ballColor].colors
+  const texture = useMemo(
+    () => createTennisBallTexture(scheme),
+    [scheme.felt, scheme.feltDark, scheme.seam],
+  )
   const radius = visualBallRadius(kidFriendly)
 
   useFrame((_, delta) => {
@@ -40,7 +47,7 @@ export function TennisBallMesh({
         <mesh scale={1.22}>
           <sphereGeometry args={[radius, 24, 24]} />
           <meshBasicMaterial
-            color={TENNIS_BALL_COLORS.glow}
+            color={scheme.glow}
             transparent
             opacity={0.22}
           />
@@ -52,7 +59,7 @@ export function TennisBallMesh({
           map={texture}
           roughness={0.92}
           metalness={0.02}
-          emissive={accent ?? '#3f4d00'}
+          emissive={accent ?? scheme.emissive}
           emissiveIntensity={kidFriendly ? 0.18 : 0.06}
         />
         {kidFriendly && (

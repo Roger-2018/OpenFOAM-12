@@ -1,5 +1,6 @@
 import { isPositionInSinglesCourt } from '../court/bounds'
-import { BALL_MASS_KG } from './constants'
+import { applyGroundBounce, detectGroundContact } from './bounce'
+import { BALL_MASS_KG, BALL_RADIUS_M } from './constants'
 import type { BallState, SimOptions, TrajectoryPoint } from './types'
 import { add, scale } from './vec3'
 import { computeForces } from './forces'
@@ -70,8 +71,10 @@ export function integrateTrajectory(
   options: SimOptions = {},
 ): TrajectoryPoint[] {
   const dt = options.dt ?? DEFAULT_DT
-  const maxPoints = options.maxPoints ?? 4000
-  const stopAtGround = options.stopAtGround ?? true
+  const maxPoints = options.maxPoints ?? 6000
+  const enableBounce = options.enableBounce ?? false
+  const maxBounces = options.maxBounces ?? 2
+  const stopAtGround = enableBounce ? false : (options.stopAtGround ?? true)
   const stopAtCourtBounds = options.stopAtCourtBounds ?? false
   const simOptions: SimOptions = {
     enableGravity: options.enableGravity ?? true,
@@ -79,21 +82,43 @@ export function integrateTrajectory(
     enableMagnus: options.enableMagnus ?? true,
   }
 
-  const points: TrajectoryPoint[] = [{ ...initial, t: 0 }]
+  const points: TrajectoryPoint[] = [{ ...initial, t: 0, flightSegment: 0 }]
   let state = initial
   let t = 0
+  let bounceCount = 0
+  let flightSegment = 0
 
   while (t < durationSec && points.length < maxPoints) {
     state = stepState(state, dt, simOptions)
     t += dt
-    if (stopAtGround && state.position.y < -0.05) break
+
+    if (enableBounce && detectGroundContact(state)) {
+      if (bounceCount >= maxBounces) {
+        state = {
+          ...state,
+          position: {
+            ...state.position,
+            y: BALL_RADIUS_M,
+          },
+          velocity: { x: 0, y: 0, z: 0 },
+          omega: { x: 0, y: 0, z: 0 },
+        }
+        points.push({ ...state, t, flightSegment })
+        break
+      }
+      state = applyGroundBounce(state)
+      bounceCount++
+      flightSegment = bounceCount
+    }
+
+    if (stopAtGround && state.position.y < BALL_RADIUS_M - 0.02) break
     if (
       stopAtCourtBounds &&
       !isPositionInSinglesCourt(state.position.x, state.position.z)
     ) {
       break
     }
-    points.push({ ...state, t })
+    points.push({ ...state, t, flightSegment })
   }
 
   return points
@@ -129,6 +154,7 @@ export function sampleAtTime(
           z: lerp(a.velocity.z, b.velocity.z),
         },
         omega: a.omega,
+        flightSegment: a.flightSegment,
       }
     }
   }
@@ -139,10 +165,32 @@ export function flightSummary(points: TrajectoryPoint[]) {
   const maxY = Math.max(...points.map((p) => p.position.y))
   const end = points[points.length - 1]
   const netCross = points.find((p) => p.position.z >= 0)
+
+  const bounces: { t: number; x: number; z: number; index: number }[] = []
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1]
+    const cur = points[i]
+    if (
+      prev.velocity.y < 0 &&
+      cur.velocity.y > 0 &&
+      cur.position.y < BALL_RADIUS_M + 0.15
+    ) {
+      bounces.push({
+        t: cur.t,
+        x: cur.position.x,
+        z: cur.position.z,
+        index: bounces.length + 1,
+      })
+    }
+  }
+
   return {
     duration: end.t,
     maxHeight: maxY,
     landing: end.position,
     netClearance: netCross ? netCross.position.y : null,
+    bounces,
+    firstLanding: bounces[0] ?? null,
+    secondLanding: bounces[1] ?? null,
   }
 }

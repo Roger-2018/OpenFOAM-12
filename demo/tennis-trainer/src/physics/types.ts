@@ -6,7 +6,11 @@ export type BallState = {
   omega: Vec3
 }
 
-export type TrajectoryPoint = BallState & { t: number }
+export type TrajectoryPoint = BallState & {
+  t: number
+  /** 0=首段飞行，1=一弹后，2=二弹后 */
+  flightSegment?: number
+}
 
 export type ForceBreakdown = {
   gravity: Vec3
@@ -25,4 +29,8 @@ export type SimOptions = {
   stopAtGround?: boolean
   /** Stop when ball crosses singles baseline/longitudinal bounds (default false). */
   stopAtCourtBounds?: boolean
+  /** 落地弹起（演示二跳） */
+  enableBounce?: boolean
+  /** 最多弹起次数（默认 2：一弹 + 二弹） */
+  maxBounces?: number
 }

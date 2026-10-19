@@ -10,6 +10,10 @@ import {
   type PlayMode,
   type StrokeId,
 } from './presets/strokes'
+import {
+  BALL_COLOR_PRESETS,
+  type BallColorId,
+} from './visual/ballColorPresets'
 
 function strokeSelect(
   id: StrokeId,
@@ -45,27 +49,37 @@ export default function App() {
   const [playing, setPlaying] = useState(true)
   const [showForces, setShowForces] = useState(true)
   const [kidFriendlyBall, setKidFriendlyBall] = useState(true)
+  const [ballColor, setBallColor] = useState<BallColorId>('classic')
+  const [enableBounce, setEnableBounce] = useState(true)
   const [camera, setCamera] = useState<CameraPreset>('baseline')
 
-  const simDuration = playMode === 'serve' ? 3.4 : 2.8
+  const simDuration = playMode === 'serve' ? 4.6 : 4.2
+  const simOptions = useMemo(
+    () => ({
+      stopAtCourtBounds: true,
+      enableBounce,
+      maxBounces: 2,
+    }),
+    [enableBounce],
+  )
   const tuning = useMemo(() => ({ power, brush }), [power, brush])
 
   const trajectoryA = useMemo(() => {
     const initial = buildInitialState(strokeA, tuning, playMode)
-    return integrateTrajectory(initial, simDuration, { stopAtCourtBounds: true })
-  }, [strokeA, tuning, playMode, simDuration])
+    return integrateTrajectory(initial, simDuration, simOptions)
+  }, [strokeA, tuning, playMode, simDuration, simOptions])
 
   const trajectoryB = useMemo(() => {
     const initial = buildInitialState(strokeB, tuning, playMode)
-    return integrateTrajectory(initial, simDuration, { stopAtCourtBounds: true })
-  }, [strokeB, tuning, playMode, simDuration])
+    return integrateTrajectory(initial, simDuration, simOptions)
+  }, [strokeB, tuning, playMode, simDuration, simOptions])
 
   const summaryA = useMemo(() => flightSummary(trajectoryA), [trajectoryA])
   const summaryB = useMemo(() => flightSummary(trajectoryB), [trajectoryB])
 
   useEffect(() => {
     setTime(0)
-  }, [strokeA, strokeB, power, brush, playMode])
+  }, [strokeA, strokeB, power, brush, playMode, enableBounce, ballColor])
 
   useEffect(() => {
     if (!playing) return
@@ -82,7 +96,7 @@ export default function App() {
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [playing, strokeA, strokeB, power, brush, playMode, simDuration])
+  }, [playing, strokeA, strokeB, power, brush, playMode, simDuration, enableBounce])
 
   const activePreset = STROKE_PRESETS[strokeA]
   const modeInfo = PLAY_MODE_LABELS[playMode]
@@ -185,6 +199,29 @@ export default function App() {
           </section>
 
           <section>
+            <h2>网球颜色</h2>
+            <div className="chips color-chips">
+              {(Object.keys(BALL_COLOR_PRESETS) as BallColorId[]).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={ballColor === id ? 'chip active color-chip' : 'chip color-chip'}
+                  style={{
+                    borderColor: BALL_COLOR_PRESETS[id].colors.felt,
+                    background:
+                      ballColor === id
+                        ? `${BALL_COLOR_PRESETS[id].colors.felt}33`
+                        : undefined,
+                  }}
+                  onClick={() => setBallColor(id)}
+                >
+                  {BALL_COLOR_PRESETS[id].label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section>
             <h2>视角</h2>
             <div className="chips">
               {(
@@ -220,6 +257,14 @@ export default function App() {
             <label className="row">
               <input
                 type="checkbox"
+                checked={enableBounce}
+                onChange={(e) => setEnableBounce(e.target.checked)}
+              />
+              落地二跳（黄圈=一弹，橙圈=二弹）
+            </label>
+            <label className="row">
+              <input
+                type="checkbox"
                 checked={showForces}
                 onChange={(e) => setShowForces(e.target.checked)}
               />
@@ -238,9 +283,16 @@ export default function App() {
               </li>
               <li>A 最高点: {summaryA.maxHeight.toFixed(2)} m</li>
               <li>
-                A 落点: x={summaryA.landing.x.toFixed(2)} m, z=
+                A 最终停点: x={summaryA.landing.x.toFixed(2)} m, z=
                 {summaryA.landing.z.toFixed(2)} m
               </li>
+              {summaryA.firstLanding && (
+                <li>
+                  A 一弹: z={summaryA.firstLanding.z.toFixed(2)} m
+                  {summaryA.secondLanding &&
+                    ` → 二弹: z=${summaryA.secondLanding.z.toFixed(2)} m`}
+                </li>
+              )}
               {playMode === 'serve' && (
                 <li className="hint">发球模式：落点应落在黄色占先发球区</li>
               )}
@@ -271,6 +323,7 @@ export default function App() {
             camera={camera}
             playMode={playMode}
             kidFriendlyBall={kidFriendlyBall}
+            ballColor={ballColor}
           />
           <div className="timeline">
             <button type="button" onClick={() => setPlaying((p) => !p)}>

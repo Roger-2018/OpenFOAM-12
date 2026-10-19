@@ -17,7 +17,44 @@
 
 ---
 
-## 2. OpenFOAM 风洞算例思路（固定球 + 来流 + 旋转壁面）
+## 2. forceCoeffs 模板（已配置）
+
+仓库内可直接复制：
+
+```text
+demo/tennis-trainer/tools/openfoam/tennisBallSteady/
+├── system/forceCoeffsTennisBall    # magUInf、Aref、lRef、lift/drag 方向
+├── constant/tennisBallAeroRefs     # 记录 Uinf、omegaX（人工对照）
+└── README.md
+```
+
+复制 `system/forceCoeffsTennisBall` 与 `system/functions`，在 `controlDict` 写 `#includeFunc functions`（OF12 惯例）。  
+
+**输出路径与格式**
+
+```text
+postProcessing/tennisBallCoeffs/<time>/tennisBallCoeffs.dat
+```
+
+文件头为 `#` 注释（含 `liftDir` / `magUInf` / `Aref` 等），数据行：
+
+```text
+<Time>  <Cm>  <Cd>  <Cl>  <Cl(f)>  <Cl(r)>
+```
+
+导入 App 时只取 **Cd（第 3 列）**、**Cl（第 4 列）**；样例见 `tools/openfoam/fixtures/tennisBallCoeffs.sample.dat`。
+
+转为 App CSV：
+
+```bash
+npm run forceCoeffs-to-aero -- \
+  --dat postProcessing/tennisBallCoeffs/500/tennisBallCoeffs.dat \
+  --U 35 --omega-x 400 \
+  --out data/aero/build-from-of.csv
+npm run import-aero -- data/aero/build-from-of.csv
+```
+
+## 3. OpenFOAM 风洞算例思路（固定球 + 来流 + 旋转壁面）
 
 在仓库 OpenFOAM 12 环境中（需先 `source` 对应 `etc/bashrc`）：
 
@@ -35,7 +72,7 @@
 
 ---
 
-## 3. CSV 格式（必须）
+## 4. CSV 格式（必须）
 
 ```csv
 Re,spin_param,Cd,Cl,notes
@@ -51,7 +88,7 @@ Re,spin_param,Cd,Cl,notes
 
 ---
 
-## 4. 导入到 App
+## 5. 导入到 App
 
 ```bash
 cd demo/tennis-trainer
@@ -65,7 +102,7 @@ npm run dev
 
 ---
 
-## 5. 代码入口（开发）
+## 6. 代码入口（开发）
 
 | 文件 | 作用 |
 |------|------|
@@ -78,7 +115,7 @@ npm run dev
 
 ---
 
-## 6. 落地系数（后续扩展）
+## 7. 落地系数（后续扩展）
 
 当前 **二跳** 仍为教学用经验公式。若需 OpenFOAM/实验标定弹地，建议：
 
@@ -88,7 +125,7 @@ npm run dev
 
 ---
 
-## 7. 验证建议
+## 8. 验证建议
 
 1. 选 2～3 个 \((U,\omega)\) 用 OF 算 \(C_d、C_l\)，写入 CSV；
 2. `npm run test` 确保插值通过；

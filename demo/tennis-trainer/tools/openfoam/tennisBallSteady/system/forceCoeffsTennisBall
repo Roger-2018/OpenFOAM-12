@@ -1,0 +1,47 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  网球风洞 forceCoeffs — 与 demo/tennis-trainer 气动力 CSV 参考系一致
+
+  坐标（与 App 一致）：
+    +x 横向（单打宽度）
+    +y 竖直向上
+    +z 来流方向（球若迎面飞来，空气速度 U∞ 沿 +z）
+
+  阻力：来流 +z，阻力 force 沿 -z → dragDir (0 0 -1)
+  升力/Magnus 竖直分量：liftDir (0 1 0)
+  上旋绕 +x：pitchAxis (1 0 0)
+
+  每个算例请把 magUInf 设为与入口 |U| 相同（m/s）。
+  球面 patch 名默认 tennisBall；旋转壁面用 rotatingWallVelocity。
+\*---------------------------------------------------------------------------*/
+
+tennisBallCoeffs
+{
+    type            forceCoeffs;
+    libs            ("libforces.so");
+
+    // 每个时间步写入 postProcessing/tennisBallCoeffs/<time>/tennisBallCoeffs.dat
+    writeControl    timeStep;
+    writeInterval   1;
+
+    patches         (tennisBall);
+
+    rho             rhoInf;
+    rhoInf          1.225;
+
+    liftDir         (0 1 0);
+    dragDir         (0 0 -1);
+    pitchAxis       (1 0 0);
+    CofR            (0 0 0);
+
+    // <<< 按工况修改：与 0/U 入口来流大小一致
+    magUInf         35;
+
+    // ITF 网球：R=0.034 m → A=πR², l=2R（与 src/physics/constants.ts 一致）
+    lRef            0.068;
+    Aref            0.00363760976;
+
+    log             yes;
+}
+
+
+// ************************************************************************* //

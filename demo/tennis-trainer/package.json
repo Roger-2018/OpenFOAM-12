@@ -13,7 +13,8 @@
     "lint": "oxlint",
     "preview": "npx vite preview",
     "test": "vitest run",
-    "import-aero": "node tools/import-aero.mjs"
+    "import-aero": "node tools/import-aero.mjs",
+    "forceCoeffs-to-aero": "node tools/openfoam/forceCoeffs-to-aero.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

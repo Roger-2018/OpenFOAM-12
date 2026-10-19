@@ -1,0 +1,8 @@
+// 将下面整段粘贴到算例 system/controlDict 的 functions { } 内：
+//
+// functions
+// {
+//     #include "forceCoeffsTennisBall"
+// }
+//
+// 并把本目录 system/forceCoeffsTennisBall 复制到你的算例 system/ 下。

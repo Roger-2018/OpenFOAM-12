@@ -1,5 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
+import { COURT } from '../court/dimensions'
+import type { PlayMode } from '../presets/strokes'
 import { CourtSurface, Net } from './CourtSurface'
 import { TrajectoryVisual } from './TrajectoryVisual'
 import type { TrajectoryPoint } from '../physics/types'
@@ -24,6 +26,7 @@ type Props = {
   time: number
   showForces: boolean
   camera: CameraPreset
+  playMode: PlayMode
 }
 
 function SceneContent({
@@ -35,8 +38,10 @@ function SceneContent({
   time,
   showForces,
   camera,
+  playMode,
 }: Props) {
   const cam = CAMERA[camera]
+  const baselineZ = -COURT.halfLength
   return (
     <>
       <PerspectiveCamera makeDefault position={cam.position} fov={48} />
@@ -44,8 +49,14 @@ function SceneContent({
       <ambientLight intensity={0.55} />
       <directionalLight castShadow position={[8, 16, -6]} intensity={1.1} />
       <hemisphereLight args={['#dbeafe', '#14532d', 0.35]} />
-      <CourtSurface />
+      <CourtSurface highlightServeTarget={playMode === 'serve'} />
       <Net />
+      {playMode === 'serve' && (
+        <mesh position={[0.55, 0.04, baselineZ + 0.05]}>
+          <boxGeometry args={[0.5, 0.08, 0.5]} />
+          <meshStandardMaterial color="#64748b" />
+        </mesh>
+      )}
       <TrajectoryVisual
         points={trajectoryA}
         color={colorA}

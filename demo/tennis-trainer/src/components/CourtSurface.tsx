@@ -14,7 +14,11 @@ function courtLine(points: [number, number, number][]) {
   )
 }
 
-export function CourtSurface() {
+type CourtProps = {
+  highlightServeTarget?: boolean
+}
+
+export function CourtSurface({ highlightServeTarget = false }: CourtProps) {
   const { halfLength: L, singlesHalfWidth: W, serviceLineFromNet: S } = COURT
   const y = 0.01
 
@@ -49,6 +53,14 @@ export function CourtSurface() {
     [0, y, 0],
   ]
 
+  const deuceBox: [number, number, number][] = [
+    [0, y, 0],
+    [W, y, 0],
+    [W, y, S],
+    [0, y, S],
+    [0, y, 0],
+  ]
+
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
@@ -61,6 +73,26 @@ export function CourtSurface() {
       {courtLine(serviceFar)}
       {courtLine(serviceCenterNear)}
       {courtLine(serviceCenterFar)}
+      {highlightServeTarget && (
+        <>
+          <Line
+            points={deuceBox}
+            color="#fde047"
+            lineWidth={2.5}
+            transparent
+            opacity={0.85}
+          />
+          <mesh position={[W / 2, 0.015, S / 2]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[W, S]} />
+            <meshStandardMaterial
+              color="#fde047"
+              transparent
+              opacity={0.12}
+              side={DoubleSide}
+            />
+          </mesh>
+        </>
+      )}
     </group>
   )
 }

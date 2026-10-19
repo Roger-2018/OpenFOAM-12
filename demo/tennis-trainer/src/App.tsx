@@ -3,16 +3,18 @@ import './App.css'
 import { TennisScene, type CameraPreset } from './components/TennisScene'
 import { flightSummary, integrateTrajectory } from './physics/integrate'
 import {
+  PLAY_MODE_LABELS,
   STROKE_PRESETS,
   buildInitialState,
+  strokeDisplayLabel,
+  type PlayMode,
   type StrokeId,
 } from './presets/strokes'
-
-const SIM_DURATION = 2.8
 
 function strokeSelect(
   id: StrokeId,
   current: StrokeId,
+  mode: PlayMode,
   onChange: (s: StrokeId) => void,
 ) {
   return (
@@ -27,14 +29,15 @@ function strokeSelect(
       }
       onClick={() => onChange(id)}
     >
-      {STROKE_PRESETS[id].label}
+      {strokeDisplayLabel(id, mode)}
     </button>
   )
 }
 
 export default function App() {
-  const [strokeA, setStrokeA] = useState<StrokeId>('topspin')
-  const [strokeB, setStrokeB] = useState<StrokeId>('flat')
+  const [playMode, setPlayMode] = useState<PlayMode>('serve')
+  const [strokeA, setStrokeA] = useState<StrokeId>('flat')
+  const [strokeB, setStrokeB] = useState<StrokeId>('topspin')
   const [compare, setCompare] = useState(true)
   const [power, setPower] = useState(0.78)
   const [brush, setBrush] = useState(0.72)
@@ -43,24 +46,25 @@ export default function App() {
   const [showForces, setShowForces] = useState(true)
   const [camera, setCamera] = useState<CameraPreset>('baseline')
 
+  const simDuration = playMode === 'serve' ? 3.4 : 2.8
   const tuning = useMemo(() => ({ power, brush }), [power, brush])
 
   const trajectoryA = useMemo(() => {
-    const initial = buildInitialState(strokeA, tuning)
-    return integrateTrajectory(initial, SIM_DURATION, { stopAtCourtBounds: true })
-  }, [strokeA, tuning])
+    const initial = buildInitialState(strokeA, tuning, playMode)
+    return integrateTrajectory(initial, simDuration, { stopAtCourtBounds: true })
+  }, [strokeA, tuning, playMode, simDuration])
 
   const trajectoryB = useMemo(() => {
-    const initial = buildInitialState(strokeB, tuning)
-    return integrateTrajectory(initial, SIM_DURATION, { stopAtCourtBounds: true })
-  }, [strokeB, tuning])
+    const initial = buildInitialState(strokeB, tuning, playMode)
+    return integrateTrajectory(initial, simDuration, { stopAtCourtBounds: true })
+  }, [strokeB, tuning, playMode, simDuration])
 
   const summaryA = useMemo(() => flightSummary(trajectoryA), [trajectoryA])
   const summaryB = useMemo(() => flightSummary(trajectoryB), [trajectoryB])
 
   useEffect(() => {
     setTime(0)
-  }, [strokeA, strokeB, power, brush])
+  }, [strokeA, strokeB, power, brush, playMode])
 
   useEffect(() => {
     if (!playing) return
@@ -71,15 +75,16 @@ export default function App() {
       last = now
       setTime((t) => {
         const next = t + dt
-        return next > SIM_DURATION ? 0 : next
+        return next > simDuration ? 0 : next
       })
       frame = requestAnimationFrame(tick)
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [playing, strokeA, strokeB, power, brush])
+  }, [playing, strokeA, strokeB, power, brush, playMode, simDuration])
 
   const activePreset = STROKE_PRESETS[strokeA]
+  const modeInfo = PLAY_MODE_LABELS[playMode]
 
   return (
     <div className="app">
@@ -87,16 +92,16 @@ export default function App() {
         <div>
           <h1>网球轨迹演示</h1>
           <p className="subtitle">
-            选择挥拍类型，观察上旋、切削、侧旋与平击在 3D 球场中的飞行差异（简化物理模型，用于入门理解）。
+            底线发球进发球区，或底线相持深球对比上旋/切削/侧旋（简化物理，便于入门）。
           </p>
         </div>
         <div className="legend">
           <span className="dot" style={{ background: STROKE_PRESETS[strokeA].color }} />
-          A: {STROKE_PRESETS[strokeA].label}
+          A: {strokeDisplayLabel(strokeA, playMode)}
           {compare && (
             <>
               <span className="dot" style={{ background: STROKE_PRESETS[strokeB].color }} />
-              B: {STROKE_PRESETS[strokeB].label}
+              B: {strokeDisplayLabel(strokeB, playMode)}
             </>
           )}
         </div>
@@ -105,10 +110,27 @@ export default function App() {
       <div className="layout">
         <aside className="panel">
           <section>
+            <h2>场景</h2>
+            <div className="chips">
+              {(['serve', 'rally'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={playMode === mode ? 'chip active' : 'chip'}
+                  onClick={() => setPlayMode(mode)}
+                >
+                  {PLAY_MODE_LABELS[mode].label}
+                </button>
+              ))}
+            </div>
+            <p className="mode-hint">{modeInfo.description}</p>
+          </section>
+
+          <section>
             <h2>轨迹 A</h2>
             <div className="chips">
               {(Object.keys(STROKE_PRESETS) as StrokeId[]).map((id) =>
-                strokeSelect(id, strokeA, setStrokeA),
+                strokeSelect(id, strokeA, playMode, setStrokeA),
               )}
             </div>
           </section>
@@ -127,7 +149,7 @@ export default function App() {
                 <h2>轨迹 B</h2>
                 <div className="chips">
                   {(Object.keys(STROKE_PRESETS) as StrokeId[]).map((id) =>
-                    strokeSelect(id, strokeB, setStrokeB),
+                    strokeSelect(id, strokeB, playMode, setStrokeB),
                   )}
                 </div>
               </>
@@ -135,7 +157,7 @@ export default function App() {
           </section>
 
           <section>
-            <h2>击球感觉</h2>
+            <h2>{playMode === 'serve' ? '发球感觉' : '击球感觉'}</h2>
             <label>
               力量 {Math.round(power * 100)}%
               <input
@@ -148,7 +170,8 @@ export default function App() {
               />
             </label>
             <label>
-              刷球 {Math.round(brush * 100)}%
+              {playMode === 'serve' ? '抛球/刷球' : '刷球'}{' '}
+              {Math.round(brush * 100)}%
               <input
                 type="range"
                 min={0.1}
@@ -183,7 +206,7 @@ export default function App() {
           </section>
 
           <section className="tips">
-            <h2>{activePreset.label}</h2>
+            <h2>{strokeDisplayLabel(strokeA, playMode)}</h2>
             <p>{activePreset.description}</p>
             <label className="row">
               <input
@@ -206,8 +229,12 @@ export default function App() {
               </li>
               <li>A 最高点: {summaryA.maxHeight.toFixed(2)} m</li>
               <li>
-                A 落点 (z): {summaryA.landing.z.toFixed(1)} m（网为 z=0）
+                A 落点: x={summaryA.landing.x.toFixed(2)} m, z=
+                {summaryA.landing.z.toFixed(2)} m
               </li>
+              {playMode === 'serve' && (
+                <li className="hint">发球模式：落点应落在黄色占先发球区</li>
+              )}
               {compare && (
                 <>
                   <li>
@@ -233,6 +260,7 @@ export default function App() {
             time={time}
             showForces={showForces}
             camera={camera}
+            playMode={playMode}
           />
           <div className="timeline">
             <button type="button" onClick={() => setPlaying((p) => !p)}>
@@ -241,7 +269,7 @@ export default function App() {
             <input
               type="range"
               min={0}
-              max={SIM_DURATION}
+              max={simDuration}
               step={0.01}
               value={time}
               onChange={(e) => {

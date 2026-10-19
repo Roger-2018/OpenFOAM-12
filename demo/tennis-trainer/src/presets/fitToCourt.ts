@@ -1,4 +1,9 @@
-import { COURT_LIMITS, isLandingInSinglesCourt } from '../court/bounds'
+import {
+  type FitScenario,
+  isLandingOkForScenario,
+  RALLY_LIMITS,
+  SERVE_DEUCE_BOX,
+} from '../court/bounds'
 import { integrateTrajectory } from '../physics/integrate'
 import type { BallState } from '../physics/types'
 import { scale, v3 } from '../physics/vec3'
@@ -12,20 +17,30 @@ function scaleVelocity(state: BallState, factor: number): BallState {
 }
 
 function landingPosition(state: BallState) {
-  const points = integrateTrajectory(state, 3.5)
+  const points = integrateTrajectory(state, 3.8)
   return points[points.length - 1].position
 }
 
-function landingOk(x: number, z: number) {
-  return isLandingInSinglesCourt(x, z)
-}
-
-function trimLateral(state: BallState): BallState {
+function trimLateral(state: BallState, scenario: FitScenario): BallState {
   let trial = state
+  const xLimit =
+    scenario === 'serve' ? SERVE_DEUCE_BOX.xMax : RALLY_LIMITS.xMax
+
   for (let j = 0; j < 8; j++) {
     const { x, z } = landingPosition(trial)
-    if (landingOk(x, z)) return trial
-    if (Math.abs(x) <= COURT_LIMITS.xMax) return trial
+    if (isLandingOkForScenario(scenario, x, z)) return trial
+    if (scenario === 'serve' && x < SERVE_DEUCE_BOX.xMin) {
+      trial = {
+        ...trial,
+        velocity: v3(
+          trial.velocity.x * 0.85 + 0.8,
+          trial.velocity.y,
+          trial.velocity.z,
+        ),
+      }
+      continue
+    }
+    if (Math.abs(x) <= xLimit) return trial
     trial = {
       ...trial,
       velocity: v3(
@@ -39,27 +54,55 @@ function trimLateral(state: BallState): BallState {
   return trial
 }
 
-/**
- * Scales launch speed/spin so first bounce lands in the opponent singles court (demo teaching).
- */
-export function fitInitialStateToCourt(initial: BallState): BallState {
-  let factor = 1.08
-  let fallback = scaleVelocity(initial, 0.55)
+function limitsForScenario(scenario: FitScenario) {
+  if (scenario === 'serve') {
+    return {
+      zMax: SERVE_DEUCE_BOX.zMax,
+      zMin: SERVE_DEUCE_BOX.zMin,
+      xMax: SERVE_DEUCE_BOX.xMax,
+      xMin: SERVE_DEUCE_BOX.xMin,
+    }
+  }
+  return {
+    zMax: RALLY_LIMITS.zMax,
+    zMin: RALLY_LIMITS.zMin,
+    xMax: RALLY_LIMITS.xMax,
+    xMin: 0,
+  }
+}
 
-  for (let i = 0; i < 40; i++) {
-    if (factor < 0.38) break
-    let trial = trimLateral(scaleVelocity(initial, factor))
+/**
+ * 按场景校准出球，使第一落点落在单打有效区或发球区内。
+ */
+export function fitInitialStateToCourt(
+  initial: BallState,
+  scenario: FitScenario = 'rally',
+): BallState {
+  let factor = scenario === 'serve' ? 1.05 : 1.08
+  let fallback = scaleVelocity(initial, 0.52)
+  const limits = limitsForScenario(scenario)
+
+  for (let i = 0; i < 44; i++) {
+    if (factor < 0.34) break
+    let trial = trimLateral(scaleVelocity(initial, factor), scenario)
     const { x, z } = landingPosition(trial)
 
-    if (landingOk(x, z)) {
+    if (isLandingOkForScenario(scenario, x, z)) {
       return trial
     }
 
     fallback = trial
-    if (z > COURT_LIMITS.zMax || Math.abs(x) > COURT_LIMITS.xMax) {
-      factor *= 0.93
-    } else if (z < COURT_LIMITS.zMin) {
-      factor *= 1.04
+    const tooLong = z > limits.zMax
+    const tooShort = z < limits.zMin
+    const tooWide =
+      scenario === 'serve'
+        ? x > limits.xMax || x < limits.xMin
+        : Math.abs(x) > limits.xMax
+
+    if (tooLong || tooWide) {
+      factor *= 0.92
+    } else if (tooShort) {
+      factor *= 1.05
     } else {
       factor *= 0.96
     }

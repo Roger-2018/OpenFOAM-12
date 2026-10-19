@@ -2,7 +2,26 @@
 
 面向初学者的 **3D 网球轨迹演示**：对比平击、上旋、切削、侧旋在简化物理模型下的飞行差异。
 
-## 快速开始
+---
+
+## 重要：在你自己的电脑上打开
+
+Cloud Agent / 远程开发环境里显示的 `http://localhost:5173` **只在那台远程机器上有效**，不能在你家/办公室电脑的浏览器里直接打开。
+
+请在你 **本机** 按下面步骤启动（需要已安装 [Node.js](https://nodejs.org/) **20.19+ 或 22.12+**，可用 `node -v` 查看）。
+
+### 1. 拿到代码（注意分支）
+
+演示目前在该分支（若 PR 未合并进 `master`，只 pull `master` 会 **没有** `demo/tennis-trainer`）：
+
+```bash
+git clone https://github.com/Roger-2018/OpenFOAM-12.git
+cd OpenFOAM-12
+git fetch origin cursor/tennis-trainer-mvp-e8ff
+git checkout cursor/tennis-trainer-mvp-e8ff
+```
+
+### 2. 安装并启动
 
 ```bash
 cd demo/tennis-trainer
@@ -10,15 +29,55 @@ npm install
 npm run dev
 ```
 
-浏览器打开终端提示的本地地址（默认 `http://localhost:5173`）。
+终端里会出现类似：
+
+```text
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.x.x:5173/
+```
+
+用浏览器打开 **Local** 那一行（本机访问用 `localhost` 即可）。配置了 `open: true` 时，部分环境会自动打开浏览器。
+
+### 3. 不要用「双击 index.html」
+
+这是 Vite + React 项目，**必须** 通过 `npm run dev`（或下面的 preview）由开发服务器提供页面；直接打开 `index.html` 会是空白或报错。
+
+### 4. 备选：先构建再预览
+
+```bash
+npm run build
+npm run preview
+```
+
+默认预览地址：`http://localhost:4173/`。
+
+---
+
+## 本地打不开？对照排查
+
+| 现象 | 常见原因 | 处理 |
+|------|----------|------|
+| 没有 `demo/tennis-trainer` 目录 | 仍在 `master`，演示未合并 | `git checkout cursor/tennis-trainer-mvp-e8ff` |
+| `npm: command not found` | 未安装 Node | 安装 LTS Node 22，重开终端 |
+| `npm install` 报错 / Vite 起不来 | Node 版本过旧 | 升级到 ≥20.19 或 ≥22.12；本目录有 `.nvmrc`：`nvm use` |
+| 浏览器无法连接 localhost | 未在本目录执行 `npm run dev` | 确认终端进程在跑、无报错 |
+| 端口被占用 | 5173 已被占用 | 终端会换端口，看新 URL；或关掉占用 5173 的程序 |
+| 想用手机同 WiFi 看 | 需局域网地址 | 用终端里的 **Network** URL（`npm run dev` 已 `host: true`） |
+| 页面空白 | 用了 file:// 打开 | 改用 `http://localhost:5173` |
+| 公司网络限制 | 依赖从 npm 下载 | 检查代理 / 换网络后重试 `npm install` |
+
+仍有问题：把 **`node -v`、`npm run dev` 完整终端输出**、浏览器 **F12 控制台** 截图发出来便于定位。
+
+---
 
 ## 脚本
 
 | 命令 | 说明 |
 |------|------|
-| `npm run dev` | 开发服务器 |
-| `npm run test` | Vitest 单元测试（物理与预设） |
-| `npm run build` | 生产构建 |
+| `npm run dev` / `npm start` | 开发服务器（默认 5173） |
+| `npm run preview` | 预览生产构建（默认 4173） |
+| `npm run test` | Vitest 单元测试 |
+| `npm run build` | 生产构建到 `dist/` |
 
 ## 结构
 

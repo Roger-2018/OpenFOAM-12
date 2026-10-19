@@ -14,7 +14,14 @@ import {
   BALL_COLOR_PRESETS,
   type BallColorId,
 } from './visual/ballColorPresets'
-
+import { CoachBanner } from './components/CoachBanner'
+import { pickCoachTip } from './education/coachTip'
+import {
+  PLAYBACK_RATE_LABELS,
+  PLAYBACK_RATES,
+  advanceSimulationTime,
+  type PlaybackRate,
+} from './playback/playbackRate'
 function strokeSelect(
   id: StrokeId,
   current: StrokeId,
@@ -51,6 +58,7 @@ export default function App() {
   const [kidFriendlyBall, setKidFriendlyBall] = useState(true)
   const [ballColor, setBallColor] = useState<BallColorId>('classic')
   const [enableBounce, setEnableBounce] = useState(true)
+  const [playbackRate, setPlaybackRate] = useState<PlaybackRate>(0.5)
   const [camera, setCamera] = useState<CameraPreset>('baseline')
 
   const simDuration = playMode === 'serve' ? 4.6 : 4.2
@@ -77,9 +85,22 @@ export default function App() {
   const summaryA = useMemo(() => flightSummary(trajectoryA), [trajectoryA])
   const summaryB = useMemo(() => flightSummary(trajectoryB), [trajectoryB])
 
+  const coachTip = useMemo(
+    () =>
+      pickCoachTip({
+        stroke: strokeA,
+        playMode,
+        time,
+        enableBounce,
+        firstBounceT: summaryA.firstLanding?.t ?? null,
+        secondBounceT: summaryA.secondLanding?.t ?? null,
+      }),
+    [strokeA, playMode, time, enableBounce, summaryA],
+  )
+
   useEffect(() => {
     setTime(0)
-  }, [strokeA, strokeB, power, brush, playMode, enableBounce, ballColor])
+  }, [strokeA, strokeB, power, brush, playMode, enableBounce, ballColor, playbackRate])
 
   useEffect(() => {
     if (!playing) return
@@ -88,15 +109,22 @@ export default function App() {
     const tick = (now: number) => {
       const dt = (now - last) / 1000
       last = now
-      setTime((t) => {
-        const next = t + dt
-        return next > simDuration ? 0 : next
-      })
+      setTime((t) => advanceSimulationTime(t, dt, playbackRate, simDuration))
       frame = requestAnimationFrame(tick)
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [playing, strokeA, strokeB, power, brush, playMode, simDuration, enableBounce])
+  }, [
+    playing,
+    strokeA,
+    strokeB,
+    power,
+    brush,
+    playMode,
+    simDuration,
+    enableBounce,
+    playbackRate,
+  ])
 
   const activePreset = STROKE_PRESETS[strokeA]
   const modeInfo = PLAY_MODE_LABELS[playMode]
@@ -243,9 +271,27 @@ export default function App() {
             </div>
           </section>
 
+          <section>
+            <h2>播放速度</h2>
+            <div className="chips">
+              {PLAYBACK_RATES.map((rate) => (
+                <button
+                  key={rate}
+                  type="button"
+                  className={playbackRate === rate ? 'chip active' : 'chip'}
+                  onClick={() => setPlaybackRate(rate)}
+                >
+                  {PLAYBACK_RATE_LABELS[rate]}
+                </button>
+              ))}
+            </div>
+            <p className="mode-hint">默认 0.5× 慢放，方便小朋友看清一弹、二弹。</p>
+          </section>
+
           <section className="tips">
             <h2>{strokeDisplayLabel(strokeA, playMode)}</h2>
             <p>{activePreset.description}</p>
+            <CoachBanner tip={coachTip} />
             <label className="row">
               <input
                 type="checkbox"
@@ -312,6 +358,9 @@ export default function App() {
         </aside>
 
         <main className="viewport">
+          <div className="viewport-coach">
+            <CoachBanner tip={coachTip} />
+          </div>
           <TennisScene
             trajectoryA={trajectoryA}
             trajectoryB={trajectoryB}
@@ -340,7 +389,9 @@ export default function App() {
                 setTime(Number(e.target.value))
               }}
             />
-            <span>{time.toFixed(2)} s</span>
+            <span>
+              {time.toFixed(2)} s · {PLAYBACK_RATE_LABELS[playbackRate]}
+            </span>
           </div>
         </main>
       </div>

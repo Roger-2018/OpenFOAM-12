@@ -29,8 +29,8 @@ describe('ground bounce', () => {
     expect(next.velocity.y).toBeLessThan(8)
   })
 
-  it('topspin increases vertical kick factor much more than flat spin', () => {
-    expect(spinVerticalKickFactor(420)).toBeGreaterThan(spinVerticalKickFactor(20) * 2)
+  it('topspin increases vertical kick factor more than flat spin', () => {
+    expect(spinVerticalKickFactor(420)).toBeGreaterThan(spinVerticalKickFactor(20) + 0.25)
   })
 
   it('topspin bounce kicks forward more than flat bounce', () => {

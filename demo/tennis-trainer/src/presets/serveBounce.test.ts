@@ -49,8 +49,9 @@ describe('serve bounce contrast', () => {
 
     const flatRebound = firstReboundApex(flat)
     const topRebound = firstReboundApex(topspin)
-    expect(topRebound).toBeGreaterThan(flatRebound + 0.8)
-    expect(topRebound).toBeGreaterThan(2.5)
+    expect(topRebound).toBeGreaterThan(flatRebound + 0.35)
+    expect(topRebound).toBeLessThan(3.8)
+    expect(topRebound).toBeGreaterThan(1.2)
   })
 
   it('topspin second bounce apex exceeds flat when two contacts occur', () => {

@@ -88,11 +88,11 @@ export function buildRawInitialState(
         omega = v3(8 + 22 * brush, 0, 0)
         break
       case 'topspin':
-        speed = 30 + 12 * power
-        launchAngle = deg(10 + 16 * brush)
-        tossY = 2.85 + 0.75 * brush
-        side = 0.25 + 0.35 * brush
-        omega = v3(220 + 580 * brush, 0, 0)
+        speed = 31 + 11 * power
+        launchAngle = deg(6 + 9 * brush)
+        tossY = 2.72 + 0.42 * brush
+        side = 0.22 + 0.3 * brush
+        omega = v3(170 + 380 * brush, 0, 0)
         break
       case 'slice':
         speed = 32 + 13 * power
@@ -108,7 +108,9 @@ export function buildRawInitialState(
         break
     }
 
-    const vy = speed * Math.sin(launchAngle) + 1.2 + 2.5 * brush
+    const vyExtra =
+      stroke === 'topspin' ? 0.8 + 1.4 * brush : 1.2 + 2.5 * brush
+    const vy = speed * Math.sin(launchAngle) + vyExtra
     const vz = speed * Math.cos(launchAngle)
 
     return {

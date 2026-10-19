@@ -11,9 +11,9 @@ const SPIN_DECAY = 0.88
 /** 上旋 (+ωx) 落地时「挑起来」；下旋/切削压低弹起。 */
 export function spinVerticalKickFactor(omegaX: number): number {
   if (omegaX >= 0) {
-    return 1 + Math.min(1.25, omegaX / 180)
+    return 1 + Math.min(0.52, omegaX / 340)
   }
-  return Math.max(0.45, 1 + omegaX / 350)
+  return Math.max(0.5, 1 + omegaX / 380)
 }
 
 export function detectGroundContact(state: BallState): boolean {
